@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مِذاكرة — منصة الدراسة الذكية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;800&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+  :root{
+    --bg:#ffffff;
+    --surface:#f0f9fc;
+    --surface-2:#e4f4fa;
+    --primary:#0e93b8;
+    --primary-dark:#0a6f8c;
+    --primary-light:#7fd4ec;
+    --ink:#0f2c3a;
+    --muted:#5c7d8c;
+    --failed:#e2574c;
+    --failed-bg:#fdeceb;
+    --near:#e69a1f;
+    --near-bg:#fdf3e2;
+    --new-bg:#e6f6fb;
+    --border:#d7ecf3;
+    --card:#ffffff;
+    --header-bg:rgba(255,255,255,0.92);
+    --radius:14px;
+    --shadow: 0 6px 20px rgba(14,147,184,0.08);
+    color-scheme: light;
+  }
+  html[data-theme="dark"]{
+    --bg:#0e1720;
+    --surface:#16212c;
+    --surface-2:#1c2c38;
+    --primary:#25a9d1;
+    --primary-dark:#63c9ea;
+    --primary-light:#2e6d85;
+    --ink:#e8f3f8;
+    --muted:#88a2b0;
+    --failed:#f27c72;
+    --failed-bg:#3a2224;
+    --near:#f0ac3f;
+    --near-bg:#3a2f1c;
+    --new-bg:#16303b;
+    --border:#233542;
+    --card:#182430;
+    --header-bg:rgba(14,23,32,0.9);
+    --shadow: 0 6px 20px rgba(0,0,0,0.35);
+    color-scheme: dark;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'IBM Plex Sans Arabic', sans-serif;
+    min-height:100vh;
+    transition: background .25s ease, color .25s ease;
+  }
+  h1,h2,h3,.brand{font-family:'Cairo', sans-serif;}
+  ::selection{background:var(--primary-light);}
+
+  /* ---------- Header ---------- */
+  header{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 28px; border-bottom:1px solid var(--border);
+    position:sticky; top:0; background:var(--header-bg); backdrop-filter:blur(6px);
+    z-index:50;
+  }
+  .brand{font-size:22px; font-weight:800; color:var(--primary-dark); display:flex; align-items:center; gap:10px;}
+  .brand .dot{width:11px;height:11px;border-radius:50%;background:var(--primary);display:inline-block;box-shadow:0 0 0 5px var(--surface-2);}
+  nav.tabs{display:flex; gap:6px; background:var(--surface); padding:5px; border-radius:999px; border:1px solid var(--border);}
+  nav.tabs button{
+    border:none; background:transparent; padding:9px 20px; border-radius:999px;
+    font-family:'IBM Plex Sans Arabic'; font-weight:600; font-size:14.5px; color:var(--muted);
+    cursor:pointer; transition:all .2s;
+  }
+  nav.tabs button.active{background:var(--primary); color:#fff; box-shadow:var(--shadow);}
+  nav.tabs button:not(.active):hover{color:var(--primary-dark);}
+  .head-right{display:flex; align-items:center; gap:14px;}
+  .sound-toggle{border:1px solid var(--border); background:var(--surface); border-radius:999px; padding:8px 14px; font-size:13px; font-weight:600; cursor:pointer; color:var(--muted); font-family:'IBM Plex Sans Arabic';}
+  .sound-toggle.on{color:var(--primary-dark); border-color:var(--primary-light);}
+
+  main{max-width:1240px; margin:0 auto; padding:26px 28px 100px;}
+  .view{display:none;} .view.active{display:block;}
+
+  /* ---------- Stats strip ---------- */
+  .stats-strip{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:22px;}
+  @media(max-width:760px){.stats-strip{grid-template-columns:repeat(2,1fr);}}
+  .stat-card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 16px;}
+  .stat-card .val{font-family:'Cairo'; font-weight:800; font-size:24px; color:var(--primary-dark); display:flex; align-items:baseline; gap:4px;}
+  .stat-card .val small{font-size:13px; font-weight:600; color:var(--muted);}
+  .stat-card .lbl{font-size:12.5px; color:var(--muted); margin-top:3px;}
+  .quote-strip{background:linear-gradient(90deg,var(--surface-2),var(--surface)); border:1px solid var(--border); border-radius:12px; padding:12px 18px; margin-bottom:22px; font-size:13.5px; color:var(--primary-dark); font-weight:600;}
+
+  /* ---------- Level / XP strip ---------- */
+  .level-strip{display:flex; align-items:center; gap:16px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; margin-bottom:22px;}
+  .level-badge{font-family:'Cairo'; font-weight:800; font-size:15px; color:var(--primary-dark); background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 16px; flex:none; white-space:nowrap;}
+  .level-info{flex:1; min-width:0;}
+  .level-row{display:flex; justify-content:space-between; gap:10px; font-size:12.5px; color:var(--muted); margin-bottom:6px; font-weight:600;}
+  .level-row span:first-child{color:var(--ink); font-weight:700;}
+  .level-bar{height:8px; background:var(--surface-2); border-radius:99px; overflow:hidden;}
+  .level-bar>div{height:100%; width:0%; background:linear-gradient(90deg,var(--primary),var(--primary-dark)); border-radius:99px; transition:width .5s ease;}
+
+  /* ---------- Weekly activity chart ---------- */
+  .week-chart-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px 18px; margin-bottom:22px;}
+  .week-chart-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px; flex-wrap:wrap; gap:6px;}
+  .week-chart-head h3{margin:0; font-size:15px; color:var(--primary-dark);}
+  .week-total{font-size:12.5px; color:var(--muted); font-weight:600;}
+  #week-chart{width:100%; height:120px; display:block;}
+
+  /* ---------- Task board ---------- */
+  .board-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px;}
+  .board-head h2{margin:0; font-size:21px;}
+  .board-head p{margin:4px 0 0; color:var(--muted); font-size:14px;}
+  .btn-primary{
+    background:var(--primary); color:#fff; border:none; padding:11px 22px; border-radius:11px;
+    font-family:'IBM Plex Sans Arabic'; font-weight:600; font-size:14.5px; cursor:pointer;
+    box-shadow:var(--shadow); transition:transform .15s, background .15s;
+  }
+  .btn-primary:hover{background:var(--primary-dark); transform:translateY(-1px);}
+  .board{display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+  @media(max-width:860px){.board{grid-template-columns:1fr;}}
+  .lane{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px; min-height:220px;}
+  .lane h3{display:flex; align-items:center; gap:8px; font-size:15px; margin:2px 4px 14px;}
+  .lane h3 .count{margin-inline-start:auto; background:var(--card); border:1px solid var(--border); font-size:12.5px; padding:2px 10px; border-radius:999px; color:var(--muted); font-family:'IBM Plex Sans Arabic';}
+  .lane.new h3{color:var(--primary-dark);}
+  .lane.near h3{color:var(--near);}
+  .lane.failed h3{color:var(--failed);}
+  .lane-icon{width:8px;height:8px;border-radius:2px;}
+  .lane.new .lane-icon{background:var(--primary);}
+  .lane.near .lane-icon{background:var(--near);}
+  .lane.failed .lane-icon{background:var(--failed);}
+
+  .task-card{background:var(--card); border:1px solid var(--border); border-radius:12px; padding:13px 14px; margin-bottom:10px; box-shadow:0 2px 6px rgba(20,60,80,0.04); position:relative; overflow:hidden;}
+  .task-card .t-name{font-weight:600; font-size:14.5px; margin-bottom:6px;}
+  .task-card .t-timer{font-family:'Cairo'; font-size:19px; font-weight:700; letter-spacing:.5px;}
+  .lane.new .t-timer{color:var(--primary-dark);}
+  .lane.near .t-timer{color:var(--near);}
+  .lane.failed .t-timer{color:var(--failed);}
+  .t-bar{height:5px; background:var(--surface-2); border-radius:99px; margin:8px 0 10px; overflow:hidden;}
+  .t-bar > div{height:100%; border-radius:99px; transition:width .4s;}
+  .lane.new .t-bar>div{background:var(--primary);}
+  .lane.near .t-bar>div{background:var(--near);}
+  .lane.failed .t-bar>div{background:var(--failed);}
+  .t-actions{display:flex; gap:8px;}
+  .t-actions button{
+    flex:1; border:1px solid var(--border); background:var(--bg); border-radius:8px; padding:7px 0;
+    font-size:13px; font-family:'IBM Plex Sans Arabic'; cursor:pointer; color:var(--ink); font-weight:600;
+  }
+  .t-actions button.done{color:var(--primary-dark); border-color:var(--primary-light);}
+  .t-actions button.done:hover{background:var(--surface-2);}
+  .t-actions button.del{color:var(--failed);}
+  .t-actions button.del:hover{background:var(--failed-bg);}
+  .empty-lane{color:var(--muted); font-size:13.5px; text-align:center; padding:26px 6px;}
+
+  /* burst celebration */
+  .burst{position:absolute; inset:0; pointer-events:none;}
+  .burst span{position:absolute; top:50%; left:50%; font-size:15px; opacity:0; animation:pop .8s ease-out forwards;}
+  @keyframes pop{
+    0%{opacity:1; transform:translate(-50%,-50%) scale(.5) translateY(0);}
+    100%{opacity:0; transform:translate(-50%,-50%) scale(1.1) translateY(-38px);}
+  }
+
+  /* Modal */
+  .overlay{position:fixed; inset:0; background:rgba(15,44,58,.35); display:none; align-items:center; justify-content:center; z-index:100;}
+  .overlay.show{display:flex;}
+  .modal{background:var(--card); border-radius:16px; padding:26px; width:340px; box-shadow:0 20px 50px rgba(10,50,70,.25);}
+  .modal h3{margin:0 0 16px;}
+  .modal label{display:block; font-size:13.5px; color:var(--muted); margin:12px 0 6px;}
+  .modal input{width:100%; padding:10px 12px; border:1px solid var(--border); border-radius:9px; font-family:'IBM Plex Sans Arabic'; font-size:14px; background:var(--card); color:var(--ink);}
+  .modal input:focus{outline:2px solid var(--primary-light);}
+  .modal-actions{display:flex; gap:10px; margin-top:20px;}
+  .btn-ghost{flex:1; background:var(--surface); border:1px solid var(--border); border-radius:9px; padding:10px; font-weight:600; cursor:pointer; font-family:'IBM Plex Sans Arabic';}
+  .modal-actions .btn-primary{flex:1; text-align:center;}
+
+  /* ---------- Library view ---------- */
+  .lib-grid{display:grid; grid-template-columns:1fr 320px; gap:20px; align-items:start;}
+  @media(max-width:980px){.lib-grid{grid-template-columns:1fr;}}
+  .drop-zone{
+    border:2px dashed var(--primary-light); border-radius:16px; background:var(--surface);
+    padding:50px 20px; text-align:center; cursor:pointer; color:var(--muted);
+  }
+  .drop-zone strong{color:var(--primary-dark); display:block; font-size:16px; margin-bottom:6px;}
+  .reader-toolbar{display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:10px 14px; margin-bottom:14px; flex-wrap:wrap;}
+  .pen{width:26px;height:26px;border-radius:50%;border:2px solid #fff; box-shadow:0 0 0 1.5px var(--border); cursor:pointer;}
+  .pen.active{box-shadow:0 0 0 2.5px var(--primary-dark);}
+  .tool-btn{border:1px solid var(--border); background:var(--card); border-radius:8px; padding:7px 13px; font-size:13.5px; font-family:'IBM Plex Sans Arabic'; cursor:pointer; font-weight:600; color:var(--ink);}
+  .tool-btn.active{background:var(--primary); color:#fff; border-color:var(--primary);}
+  .tool-sep{width:1px; height:22px; background:var(--border);}
+  .page-nav{display:flex; align-items:center; gap:8px; margin-inline-start:auto; font-size:13.5px; color:var(--muted);}
+  .page-nav #zoom-label{min-width:42px; text-align:center; font-weight:600;}
+  .bookmark-chips{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 0;}
+  .bm-chip{border:1px solid var(--primary-light); background:var(--surface); color:var(--primary-dark); border-radius:999px; padding:5px 12px; font-size:12.5px; font-family:'IBM Plex Sans Arabic'; font-weight:600; cursor:pointer;}
+  .bm-chip:hover{background:var(--surface-2);}
+  .page-nav button{border:1px solid var(--border); background:var(--card); color:var(--ink); width:30px; height:30px; border-radius:8px; cursor:pointer;}
+  #pdf-container{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; display:flex; justify-content:center; overflow:auto; max-height:78vh;}
+  .page-wrap{position:relative; box-shadow:0 4px 18px rgba(14,80,100,0.12); background:#fff;}
+  .page-wrap canvas{display:block;}
+  #hl-layer{position:absolute; inset:0; cursor:crosshair; mix-blend-mode:multiply;}
+
+  .side-panel{background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; position:sticky; top:96px; margin-bottom:16px;}
+  .side-panel h3{margin:0 0 4px; font-size:16px; color:var(--primary-dark);}
+  .side-panel p.hint{color:var(--muted); font-size:13px; margin:0 0 14px;}
+
+  .notes-panel textarea{width:100%; min-height:120px; border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-family:'IBM Plex Sans Arabic'; font-size:13.5px; resize:vertical; background:var(--card); color:var(--ink);}
+  .notes-panel .save-hint{font-size:11.5px; color:var(--muted); margin-top:6px;}
+
+  /* ---------- Floating mini timer ---------- */
+  #mini-timer{
+    position:fixed; bottom:22px; left:22px; z-index:80;
+    background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:0 10px 30px rgba(10,60,80,.15);
+    padding:12px 16px; display:none; align-items:center; gap:12px; cursor:pointer; max-width:260px;
+  }
+  #mini-timer.show{display:flex;}
+  #mini-timer .ring{width:44px; height:44px; border-radius:50%; flex:none;}
+  #mini-timer .info{overflow:hidden;}
+  #mini-timer .info .name{font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  #mini-timer .info .time{font-family:'Cairo'; font-weight:800; font-size:16px; color:var(--primary-dark);}
+
+  /* ---------- Toast ---------- */
+  #toast-box{position:fixed; top:78px; left:50%; transform:translateX(-50%); z-index:200; display:flex; flex-direction:column; gap:8px; align-items:center;}
+  .toast{background:var(--ink); color:#fff; padding:10px 18px; border-radius:10px; font-size:13.5px; box-shadow:0 8px 24px rgba(0,0,0,.2); animation:toastIn .25s ease;}
+  @keyframes toastIn{from{opacity:0; transform:translateY(-8px);} to{opacity:1; transform:translateY(0);}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand"><span class="dot"></span> مِذاكرة</div>
+  <nav class="tabs">
+    <button class="active" data-view="board">لوحة المهام</button>
+    <button data-view="library">القراءة والملخّص</button>
+  </nav>
+  <div class="head-right">
+    <button class="sound-toggle" id="theme-toggle">🌙 وضع ليلي</button>
+    <button class="sound-toggle on" id="sound-toggle">🔔 التنبيهات مفعّلة</button>
+  </div>
+</header>
+
+<div id="toast-box"></div>
+
+<main>
+  <!-- ===================== TASK BOARD ===================== -->
+  <section id="view-board" class="view active">
+    <div class="quote-strip" id="quote-strip"></div>
+
+    <div class="level-strip" id="level-strip">
+      <div class="level-badge" id="level-badge">🏆 1</div>
+      <div class="level-info">
+        <div class="level-row"><span id="level-title">المستوى 1 — مذاكِر مبتدئ</span><span id="xp-label">0 / 100 XP</span></div>
+        <div class="level-bar"><div id="level-bar-fill"></div></div>
+      </div>
+    </div>
+
+    <div class="stats-strip">
+      <div class="stat-card">
+        <div class="val" id="stat-minutes">0<small>دقيقة</small></div>
+        <div class="lbl">وقت المذاكرة اليوم</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="stat-done">0</div>
+        <div class="lbl">مهام أُنجزت اليوم</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="stat-streak">0<small>يوم</small></div>
+        <div class="lbl">أيام مذاكرة متتالية 🔥</div>
+      </div>
+      <div class="stat-card">
+        <div class="val" id="stat-active">0</div>
+        <div class="lbl">مهام قائمة الآن</div>
+      </div>
+    </div>
+
+    <div class="week-chart-card">
+      <div class="week-chart-head">
+        <h3>نشاطك آخر ٧ أيام</h3>
+        <span class="week-total" id="week-total"></span>
+      </div>
+      <canvas id="week-chart" width="600" height="120"></canvas>
+    </div>
+
+    <div class="board-head">
+      <div>
+        <h2>مهامّي</h2>
+        <p>حدّد اسم المهمة والمدة، وراقب الوقت المتبقي أوّلًا بأول.</p>
+      </div>
+      <button class="btn-primary" id="open-add">+ مهمة جديدة</button>
+    </div>
+    <div class="board">
+      <div class="lane new" id="lane-new">
+        <h3><span class="lane-icon"></span> مهام جديدة <span class="count" id="count-new">0</span></h3>
+        <div class="lane-body"></div>
+      </div>
+      <div class="lane near" id="lane-near">
+        <h3><span class="lane-icon"></span> اقتربت من الانتهاء <span class="count" id="count-near">0</span></h3>
+        <div class="lane-body"></div>
+      </div>
+      <div class="lane failed" id="lane-failed">
+        <h3><span class="lane-icon"></span> مهام فشلت <span class="count" id="count-failed">0</span></h3>
+        <div class="lane-body"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== LIBRARY / READER ===================== -->
+  <section id="view-library" class="view">
+    <div id="lib-empty">
+      <div class="drop-zone" id="drop-zone">
+        <strong>ارفع ملف PDF لتبدأ الدراسة</strong>
+        اسحب الملف هنا أو اضغط للاختيار — سيظهر الكتاب مع أقلام تحديد وإشارات مرجعية ومدوّن ملاحظات بجانبه
+      </div>
+      <input type="file" id="file-input" accept="application/pdf" style="display:none">
+    </div>
+
+    <div id="lib-reader" style="display:none;">
+      <div class="reader-toolbar">
+        <span style="font-size:13px;color:var(--muted);font-weight:600;">أقلام التحديد:</span>
+        <div class="pen active" data-color="#ffe066" style="background:#ffe066;"></div>
+        <div class="pen" data-color="#7fd4ec" style="background:#7fd4ec;"></div>
+        <div class="pen" data-color="#ff9fb2" style="background:#ff9fb2;"></div>
+        <div class="pen" data-color="#a9e6a1" style="background:#a9e6a1;"></div>
+        <div class="tool-sep"></div>
+        <button class="tool-btn" id="eraser-btn">ممحاة</button>
+        <button class="tool-btn" id="clear-hl-btn">مسح تحديد الصفحة</button>
+        <button class="tool-btn" id="bookmark-btn">☆ إشارة مرجعية</button>
+        <div class="tool-sep"></div>
+        <div class="page-nav">
+          <button id="zoom-out" title="تصغير">−</button>
+          <span id="zoom-label">100%</span>
+          <button id="zoom-in" title="تكبير">+</button>
+        </div>
+        <div class="page-nav">
+          <button id="prev-page">‹</button>
+          <span id="page-label">1 / 1</span>
+          <button id="next-page">›</button>
+        </div>
+      </div>
+      <div class="bookmark-chips" id="bookmark-chips" style="display:none;"></div>
+      <div class="lib-grid">
+        <div id="pdf-container"><div class="page-wrap" id="page-wrap"></div></div>
+        <div>
+          <div class="side-panel notes-panel">
+            <h3>ملاحظاتي</h3>
+            <p class="hint">دوّن أفكارك أثناء القراءة، تُحفظ تلقائيًا مع هذا الكتاب.</p>
+            <textarea id="notes-area" placeholder="اكتب ملاحظاتك هنا..."></textarea>
+            <div class="save-hint" id="notes-saved"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="mini-timer">
+  <svg class="ring" viewBox="0 0 44 44">
+    <circle cx="22" cy="22" r="18" fill="none" stroke="#e4f4fa" stroke-width="5"/>
+    <circle id="mini-ring-fg" cx="22" cy="22" r="18" fill="none" stroke="#0e93b8" stroke-width="5" stroke-linecap="round" stroke-dasharray="113" stroke-dashoffset="0" transform="rotate(-90 22 22)"/>
+  </svg>
+  <div class="info">
+    <div class="name" id="mini-name">—</div>
+    <div class="time" id="mini-time">00:00</div>
+  </div>
+</div>
+
+<!-- Add Task Modal -->
+<div class="overlay" id="modal-overlay">
+  <div class="modal">
+    <h3>مهمة جديدة</h3>
+    <label>اسم المهمة</label>
+    <input type="text" id="task-name" placeholder="مثال: مذاكرة الفصل الثالث">
+    <label>المدة (بالدقائق)</label>
+    <input type="number" id="task-duration" min="1" value="25">
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cancel-add">إلغاء</button>
+      <button class="btn-primary" id="confirm-add">ابدأ المهمة</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ================= NAV ================= */
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.getElementById('view-'+btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ================= QUOTE OF THE DAY ================= */
+const quotes = [
+  'خطوة صغيرة كل يوم تبني نتيجة كبيرة — ابدأ مهمتك الآن.',
+  'التركيز لمدة قصيرة بلا تشتيت أفضل من ساعات بلا تركيز.',
+  'راجع بدل ما تحفظ — الفهم أبقى من الحفظ.',
+  'خذ استراحة بعد كل مهمة، عقلك يحتاجها ليثبّت ما تعلّمته.',
+  'كل مهمة تُنجزها اليوم تقرّبك خطوة من هدفك.'
+];
+document.getElementById('quote-strip').textContent = '💡 ' + quotes[new Date().getDate() % quotes.length];
+
+/* ================= SOUND ================= */
+let soundOn = true;
+document.getElementById('sound-toggle').onclick = function(){
+  soundOn = !soundOn;
+  this.classList.toggle('on', soundOn);
+  this.textContent = soundOn ? '🔔 التنبيهات مفعّلة' : '🔕 التنبيهات متوقفة';
+};
+function beep(freq=440, dur=0.18){
+  if(!soundOn) return;
+  try{
+    const ctx = new (window.AudioContext||window.webkitAudioContext)();
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type='sine'; o.frequency.value=freq;
+    o.connect(g); g.connect(ctx.destination);
+    g.gain.setValueAtTime(0.12, ctx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+dur);
+    o.start(); o.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+function showToast(msg){
+  const box = document.getElementById('toast-box');
+  const t = document.createElement('div');
+  t.className='toast'; t.textContent=msg;
+  box.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3200);
+}
+
+/* ================= DARK MODE ================= */
+function applyTheme(dark){
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  const btn = document.getElementById('theme-toggle');
+  btn.textContent = dark ? '☀️ وضع نهاري' : '🌙 وضع ليلي';
+  btn.classList.toggle('on', dark);
+  drawWeekChart(); // bar colors are theme-dependent
+}
+(async function initTheme(){
+  let dark = false;
+  try{
+    const r = await window.storage.get('darkMode', false);
+    dark = r ? r.value==='1' : false;
+  }catch(e){}
+  applyTheme(dark);
+})();
+document.getElementById('theme-toggle').onclick = async function(){
+  const dark = document.documentElement.getAttribute('data-theme') !== 'dark';
+  applyTheme(dark);
+  try{ await window.storage.set('darkMode', dark ? '1' : '0', false); }catch(e){}
+};
+
+/* ================= CONFETTI ================= */
+function fireConfetti(){
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:300;';
+  canvas.width = innerWidth; canvas.height = innerHeight;
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  const colors = ['#0e93b8','#7fd4ec','#e69a1f','#e2574c','#a9e6a1','#ff9fb2'];
+  const particles = Array.from({length:110}, ()=>({
+    x: Math.random()*canvas.width,
+    y: -20 - Math.random()*canvas.height*0.4,
+    r: 4 + Math.random()*5,
+    c: colors[Math.floor(Math.random()*colors.length)],
+    vy: 2.5 + Math.random()*3,
+    vx: -1.5 + Math.random()*3,
+    rot: Math.random()*360,
+    vr: -6 + Math.random()*12
+  }));
+  let frame = 0;
+  (function tick(){
+    frame++;
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p=>{
+      p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+      ctx.save();
+      ctx.translate(p.x, p.y); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle = p.c;
+      ctx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.6);
+      ctx.restore();
+    });
+    if(frame < 130) requestAnimationFrame(tick);
+    else canvas.remove();
+  })();
+}
+
+/* ================= TASKS ================= */
+let tasks = [];
+let notifiedFailed = new Set();
+
+/* ---- XP / Level system ---- */
+let xp = 0;
+const LEVEL_TITLES = ['مذاكِر مبتدئ','طالب مجتهد','باحث نشيط','عقل حديدي','نجم المذاكرة','أسطورة الدراسة','عبقري لا يُقهر'];
+function levelInfo(totalXp){
+  let level=1, rem=totalXp, needed=100;
+  while(rem>=needed){ rem-=needed; level++; needed=Math.round(needed*1.25); }
+  return {level, rem, needed};
+}
+function levelTitle(level){ return LEVEL_TITLES[Math.min(level-1, LEVEL_TITLES.length-1)]; }
+function renderLevel(){
+  const {level, rem, needed} = levelInfo(xp);
+  document.getElementById('level-badge').textContent = '🏆 '+level;
+  document.getElementById('level-title').textContent = 'المستوى '+level+' — '+levelTitle(level);
+  document.getElementById('xp-label').textContent = rem+' / '+needed+' XP';
+  document.getElementById('level-bar-fill').style.width = Math.min(100, rem/needed*100)+'%';
+}
+async function loadXp(){
+  try{
+    const r = await window.storage.get('xp', false);
+    xp = r ? (parseInt(r.value,10)||0) : 0;
+  }catch(e){ xp = 0; }
+  renderLevel();
+}
+async function addXp(amount){
+  const before = levelInfo(xp).level;
+  xp += amount;
+  try{ await window.storage.set('xp', String(xp), false); }catch(e){}
+  renderLevel();
+  const after = levelInfo(xp).level;
+  if(after > before){
+    showToast('🏆 وصلت إلى المستوى '+after+' — '+levelTitle(after)+'!');
+    beep(990,0.12); setTimeout(()=>beep(1320,0.16),130);
+    fireConfetti();
+  }
+}
+
+async function loadTasks(){
+  try{
+    const r = await window.storage.get('tasks', false);
+    tasks = r ? JSON.parse(r.value) : [];
+  }catch(e){ tasks = []; }
+  renderTasks();
+  drawWeekChart();
+}
+async function saveTasks(){
+  try{ await window.storage.set('tasks', JSON.stringify(tasks), false); }catch(e){}
+}
+async function markStreakDay(){
+  const today = new Date().toISOString().slice(0,10);
+  try{
+    const r = await window.storage.get('streakDays', false);
+    let days = r ? JSON.parse(r.value) : [];
+    if(!days.includes(today)) days.push(today);
+    await window.storage.set('streakDays', JSON.stringify(days), false);
+  }catch(e){}
+}
+async function computeStreak(){
+  try{
+    const r = await window.storage.get('streakDays', false);
+    const days = r ? JSON.parse(r.value) : [];
+    const set = new Set(days);
+    let streak = 0;
+    let d = new Date();
+    while(true){
+      const key = d.toISOString().slice(0,10);
+      if(set.has(key)){ streak++; d.setDate(d.getDate()-1); }
+      else break;
+    }
+    return streak;
+  }catch(e){ return 0; }
+}
+
+const overlay = document.getElementById('modal-overlay');
+document.getElementById('open-add').onclick = ()=>{overlay.classList.add('show'); document.getElementById('task-name').focus();};
+document.getElementById('cancel-add').onclick = ()=>overlay.classList.remove('show');
+document.getElementById('confirm-add').onclick = ()=>{
+  const name = document.getElementById('task-name').value.trim();
+  const dur = parseInt(document.getElementById('task-duration').value,10);
+  if(!name || !dur || dur<1) return;
+  tasks.push({id:Date.now(), name, duration:dur, start:Date.now(), status:'active'});
+  document.getElementById('task-name').value='';
+  overlay.classList.remove('show');
+  saveTasks(); renderTasks();
+};
+
+function fmt(ms){
+  if(ms<0) ms=0;
+  const totalSec = Math.floor(ms/1000);
+  const m = Math.floor(totalSec/60), s = totalSec%60;
+  return String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+}
+
+async function renderTasks(){
+  const lanes = {new:[], near:[], failed:[]};
+  const now = Date.now();
+  tasks.forEach(t=>{
+    if(t.status==='done') return;
+    const totalMs = t.duration*60000;
+    const elapsed = now - t.start;
+    const remaining = totalMs - elapsed;
+    let kind;
+    if(remaining<=0){ kind='failed'; lanes.failed.push({...t, remaining:0, pct:100}); }
+    else if(remaining <= totalMs*0.25){ kind='near'; lanes.near.push({...t, remaining, pct: 100-(remaining/totalMs*100)}); }
+    else{ kind='new'; lanes.new.push({...t, remaining, pct: 100-(remaining/totalMs*100)}); }
+
+    if(kind==='failed' && !notifiedFailed.has(t.id)){
+      notifiedFailed.add(t.id);
+      beep(220,0.3);
+      showToast('⏰ انتهى وقت مهمة "'+t.name+'" ولم تُنجز.');
+    }
+  });
+  fillLane('lane-new', lanes.new, 'new');
+  fillLane('lane-near', lanes.near, 'near');
+  fillLane('lane-failed', lanes.failed, 'failed');
+  document.getElementById('count-new').textContent = lanes.new.length;
+  document.getElementById('count-near').textContent = lanes.near.length;
+  document.getElementById('count-failed').textContent = lanes.failed.length;
+  document.getElementById('stat-active').textContent = lanes.new.length+lanes.near.length+lanes.failed.length;
+
+  updateMiniTimer([...lanes.new, ...lanes.near].sort((a,b)=>a.remaining-b.remaining)[0]);
+  updateStats();
+}
+
+async function updateStats(){
+  const today = new Date().toISOString().slice(0,10);
+  const doneToday = tasks.filter(t=>t.status==='done' && t.doneAt && t.doneAt.slice(0,10)===today);
+  const minutes = doneToday.reduce((s,t)=>s+t.duration,0);
+  document.getElementById('stat-minutes').innerHTML = minutes+'<small>دقيقة</small>';
+  document.getElementById('stat-done').textContent = doneToday.length;
+  document.getElementById('stat-streak').innerHTML = (await computeStreak())+'<small>يوم</small>';
+}
+
+function updateMiniTimer(task){
+  const box = document.getElementById('mini-timer');
+  if(!task){ box.classList.remove('show'); return; }
+  box.classList.add('show');
+  document.getElementById('mini-name').textContent = task.name;
+  document.getElementById('mini-time').textContent = fmt(task.remaining);
+  const circumference = 113;
+  const offset = circumference * (1 - Math.max(0,Math.min(1,task.pct/100)));
+  document.getElementById('mini-ring-fg').setAttribute('stroke-dashoffset', offset);
+  document.getElementById('mini-ring-fg').setAttribute('stroke', task.pct>75? '#e69a1f':'#0e93b8');
+}
+document.getElementById('mini-timer').onclick = ()=>{
+  document.querySelector('nav.tabs button[data-view="board"]').click();
+};
+
+function fillLane(laneId, items, kind){
+  const body = document.querySelector('#'+laneId+' .lane-body');
+  if(items.length===0){ body.innerHTML = '<div class="empty-lane">لا توجد مهام هنا حاليًا</div>'; return; }
+  body.innerHTML = items.map(t=>`
+    <div class="task-card" id="card-${t.id}">
+      <div class="t-name">${escapeHtml(t.name)}</div>
+      <div class="t-timer">${kind==='failed' ? 'انتهى الوقت' : fmt(t.remaining)}</div>
+      <div class="t-bar"><div style="width:${Math.min(100,t.pct)}%"></div></div>
+      <div class="t-actions">
+        <button class="done" onclick="markDone(${t.id})">أنجزت</button>
+        <button class="del" onclick="delTask(${t.id})">حذف</button>
+      </div>
+    </div>
+  `).join('');
+}
+function escapeHtml(s){ const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+function celebrate(cardEl){
+  if(!cardEl) return;
+  const burst = document.createElement('div');
+  burst.className='burst';
+  const emojis=['✨','🎉','⭐','✓'];
+  for(let i=0;i<6;i++){
+    const s = document.createElement('span');
+    s.textContent = emojis[i%emojis.length];
+    s.style.animationDelay=(i*0.05)+'s';
+    s.style.left=(20+Math.random()*60)+'%';
+    burst.appendChild(s);
+  }
+  cardEl.appendChild(burst);
+  setTimeout(()=>burst.remove(),850);
+}
+
+async function markDone(id){
+  const cardEl = document.getElementById('card-'+id);
+  const task = tasks.find(t=>t.id===id);
+  celebrate(cardEl);
+  beep(660,0.15); setTimeout(()=>beep(880,0.18),120);
+  tasks=tasks.map(t=>t.id===id?{...t,status:'done', doneAt:new Date().toISOString()}:t);
+  await saveTasks();
+  await markStreakDay();
+  if(task) await addXp(Math.max(10, task.duration*2));
+  drawWeekChart();
+  setTimeout(renderTasks, 350);
+}
+function delTask(id){ tasks=tasks.filter(t=>t.id!==id); saveTasks(); renderTasks(); drawWeekChart(); }
+
+/* ---- Weekly activity chart (canvas bar chart, last 7 days) ---- */
+function roundRectPath(ctx,x,y,w,h,r){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+}
+function drawWeekChart(){
+  const canvas = document.getElementById('week-chart');
+  if(!canvas) return;
+  const cssWidth = canvas.clientWidth || 600;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = cssWidth*dpr; canvas.height = 120*dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const W = cssWidth, H = 120;
+  ctx.clearRect(0,0,W,H);
+
+  const days = [];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const minutesByDay = {}; days.forEach(d=>minutesByDay[d]=0);
+  tasks.forEach(t=>{
+    if(t.status==='done' && t.doneAt && (t.doneAt.slice(0,10) in minutesByDay)){
+      minutesByDay[t.doneAt.slice(0,10)] += t.duration;
+    }
+  });
+  const values = days.map(d=>minutesByDay[d]);
+  const max = Math.max(1, ...values);
+  const gap = W/days.length;
+  const barW = Math.min(38, gap*0.5);
+  const dayNames = ['أحد','اثنين','ثلاثاء','أربعاء','خميس','جمعة','سبت'];
+  const styles = getComputedStyle(document.documentElement);
+  const primary = styles.getPropertyValue('--primary').trim() || '#0e93b8';
+  const primaryDark = styles.getPropertyValue('--primary-dark').trim() || '#0a6f8c';
+  const mutedColor = styles.getPropertyValue('--muted').trim() || '#5c7d8c';
+
+  values.forEach((v,i)=>{
+    const x = gap*i + (gap-barW)/2;
+    const barH = Math.max(3, (v/max)*(H-28));
+    const y = H-22-barH;
+    ctx.fillStyle = i===6 ? primaryDark : primary;
+    ctx.globalAlpha = i===6 ? 1 : 0.7;
+    roundRectPath(ctx, x, y, barW, barH, 4);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = mutedColor;
+    ctx.font = '11px "IBM Plex Sans Arabic", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(dayNames[new Date(days[i]+'T00:00:00').getDay()], x+barW/2, H-6);
+  });
+  const totalEl = document.getElementById('week-total');
+  if(totalEl) totalEl.textContent = 'إجمالي: '+values.reduce((a,b)=>a+b,0)+' دقيقة';
+}
+window.addEventListener('resize', ()=>{
+  clearTimeout(window.__wcResize);
+  window.__wcResize = setTimeout(drawWeekChart, 200);
+});
+
+setInterval(renderTasks, 1000);
+loadTasks();
+loadXp();
+
+/* ================= PDF READER ================= */
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+let pdfDoc=null, pageNum=1, currentScale=1.3;
+const BASE_SCALE = 1.3;
+let docId = 'doc';
+let penColor = '#ffe066';
+let erasing = false;
+let drawing = false;
+let bookmarks = [];
+
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
+dropZone.onclick = ()=>fileInput.click();
+dropZone.ondragover = e=>{e.preventDefault(); dropZone.style.background='var(--surface-2)';};
+dropZone.ondragleave = ()=>dropZone.style.background='var(--surface)';
+dropZone.ondrop = e=>{
+  e.preventDefault(); dropZone.style.background='var(--surface)';
+  if(e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+};
+fileInput.onchange = e=>{ if(e.target.files[0]) handleFile(e.target.files[0]); };
+
+async function handleFile(file){
+  docId = 'doc-' + file.name.replace(/[^a-z0-9]/gi,'').slice(0,40);
+  const buf = await file.arrayBuffer();
+  pdfDoc = await pdfjsLib.getDocument({data:buf}).promise;
+  pageNum = 1;
+  currentScale = BASE_SCALE;
+  document.getElementById('zoom-label').textContent = '100%';
+  document.getElementById('lib-empty').style.display='none';
+  document.getElementById('lib-reader').style.display='block';
+  await loadBookmarks();
+  renderPage();
+  loadNotes();
+}
+
+async function renderPage(){
+  const page = await pdfDoc.getPage(pageNum);
+  const viewport = page.getViewport({scale: currentScale});
+  const wrap = document.getElementById('page-wrap');
+  wrap.innerHTML='';
+  wrap.style.width = viewport.width+'px';
+  wrap.style.height = viewport.height+'px';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = viewport.width; canvas.height = viewport.height;
+  wrap.appendChild(canvas);
+  await page.render({canvasContext: canvas.getContext('2d'), viewport}).promise;
+
+  const hl = document.createElement('canvas');
+  hl.id='hl-layer'; hl.width=viewport.width; hl.height=viewport.height;
+  wrap.appendChild(hl);
+  setupHighlighter(hl);
+  await loadHighlights(hl);
+
+  document.getElementById('page-label').textContent = pageNum+' / '+pdfDoc.numPages;
+  renderBookmarkChips();
+}
+
+document.getElementById('prev-page').onclick=()=>{ if(pageNum>1){pageNum--; renderPage();} };
+document.getElementById('next-page').onclick=()=>{ if(pdfDoc && pageNum<pdfDoc.numPages){pageNum++; renderPage();} };
+
+/* ---- Zoom controls ---- */
+document.getElementById('zoom-in').onclick=()=>{
+  if(!pdfDoc) return;
+  currentScale = Math.min(3, +(currentScale+0.15).toFixed(2));
+  document.getElementById('zoom-label').textContent = Math.round(currentScale/BASE_SCALE*100)+'%';
+  renderPage();
+};
+document.getElementById('zoom-out').onclick=()=>{
+  if(!pdfDoc) return;
+  currentScale = Math.max(0.6, +(currentScale-0.15).toFixed(2));
+  document.getElementById('zoom-label').textContent = Math.round(currentScale/BASE_SCALE*100)+'%';
+  renderPage();
+};
+
+/* ---- Bookmarks ---- */
+async function loadBookmarks(){
+  try{
+    const r = await window.storage.get('bm:'+docId, false);
+    bookmarks = r ? JSON.parse(r.value) : [];
+  }catch(e){ bookmarks = []; }
+}
+async function saveBookmarks(){
+  try{ await window.storage.set('bm:'+docId, JSON.stringify(bookmarks), false); }catch(e){}
+}
+function renderBookmarkChips(){
+  const btn = document.getElementById('bookmark-btn');
+  const isMarked = bookmarks.includes(pageNum);
+  btn.textContent = (isMarked ? '★' : '☆') + ' إشارة مرجعية';
+  btn.classList.toggle('active', isMarked);
+
+  const box = document.getElementById('bookmark-chips');
+  if(!bookmarks.length){ box.style.display='none'; box.innerHTML=''; return; }
+  box.style.display='flex';
+  box.innerHTML = bookmarks.slice().sort((a,b)=>a-b)
+    .map(p=>`<button class="bm-chip" onclick="goToBookmark(${p})">★ صفحة ${p}</button>`).join('');
+}
+function goToBookmark(p){ pageNum = p; renderPage(); }
+document.getElementById('bookmark-btn').onclick = async ()=>{
+  if(bookmarks.includes(pageNum)){
+    bookmarks = bookmarks.filter(p=>p!==pageNum);
+  }else{
+    bookmarks.push(pageNum);
+    showToast('⭐ أُضيفت الصفحة '+pageNum+' إلى الإشارات المرجعية');
+  }
+  await saveBookmarks();
+  renderBookmarkChips();
+};
+
+document.querySelectorAll('.pen').forEach(p=>{
+  p.onclick=()=>{
+    document.querySelectorAll('.pen').forEach(x=>x.classList.remove('active'));
+    p.classList.add('active');
+    penColor = p.dataset.color;
+    erasing=false;
+    document.getElementById('eraser-btn').classList.remove('active');
+  };
+});
+document.getElementById('eraser-btn').onclick=()=>{
+  erasing = !erasing;
+  document.getElementById('eraser-btn').classList.toggle('active', erasing);
+  document.querySelectorAll('.pen').forEach(x=>x.classList.remove('active'));
+};
+document.getElementById('clear-hl-btn').onclick= async ()=>{
+  const hl = document.getElementById('hl-layer');
+  hl.getContext('2d').clearRect(0,0,hl.width,hl.height);
+  try{ await window.storage.delete('hl:'+docId+':'+pageNum, false); }catch(e){}
+};
+
+function setupHighlighter(canvas){
+  const ctx = canvas.getContext('2d');
+  let last=null;
+  canvas.addEventListener('pointerdown', e=>{
+    drawing=true; last = getPos(canvas,e);
+  });
+  canvas.addEventListener('pointermove', e=>{
+    if(!drawing) return;
+    const pos = getPos(canvas,e);
+    ctx.lineCap='round'; ctx.lineJoin='round';
+    if(erasing){
+      ctx.globalCompositeOperation='destination-out';
+      ctx.lineWidth=22;
+    }else{
+      ctx.globalCompositeOperation='source-over';
+      ctx.strokeStyle = penColor; ctx.globalAlpha=0.45; ctx.lineWidth=16;
+    }
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(pos.x,pos.y); ctx.stroke();
+    ctx.globalAlpha=1;
+    last=pos;
+  });
+  window.addEventListener('pointerup', async ()=>{
+    if(drawing){ drawing=false; await saveHighlights(canvas); }
+  });
+}
+function getPos(canvas,e){
+  const r = canvas.getBoundingClientRect();
+  return {x:(e.clientX-r.left)*(canvas.width/r.width), y:(e.clientY-r.top)*(canvas.height/r.height)};
+}
+async function saveHighlights(canvas){
+  try{ await window.storage.set('hl:'+docId+':'+pageNum, canvas.toDataURL(), false); }catch(e){}
+}
+async function loadHighlights(canvas){
+  try{
+    const r = await window.storage.get('hl:'+docId+':'+pageNum, false);
+    if(r && r.value){
+      const img = new Image();
+      img.onload = ()=> canvas.getContext('2d').drawImage(img,0,0);
+      img.src = r.value;
+    }
+  }catch(e){}
+}
+
+/* ================= NOTES ================= */
+let notesTimer=null;
+document.getElementById('notes-area').addEventListener('input', ()=>{
+  clearTimeout(notesTimer);
+  document.getElementById('notes-saved').textContent='جارٍ الحفظ...';
+  notesTimer = setTimeout(async ()=>{
+    try{
+      await window.storage.set('notes:'+docId, document.getElementById('notes-area').value, false);
+      document.getElementById('notes-saved').textContent='تم الحفظ ✓';
+    }catch(e){ document.getElementById('notes-saved').textContent=''; }
+  }, 600);
+});
+async function loadNotes(){
+  try{
+    const r = await window.storage.get('notes:'+docId, false);
+    document.getElementById('notes-area').value = r ? r.value : '';
+  }catch(e){ document.getElementById('notes-area').value=''; }
+  document.getElementById('notes-saved').textContent='';
+}
+
+</script>
+</body>
+</html>
